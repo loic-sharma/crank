@@ -297,14 +297,12 @@ Future<void> _runBuild(
 }
 
 Future<int> _runProcess(String executable, List<String> arguments) async {
-  var process = await Process.start(executable, arguments, runInShell: true);
-
-  process.stdout
-    .transform(utf8.decoder)
-    .forEach(stdout.write);
-  process.stderr
-    .transform(utf8.decoder)
-    .forEach(stderr.write);
+  var process = await Process.start(
+    executable,
+    arguments,
+    runInShell: true,
+    mode: ProcessStartMode.inheritStdio,
+  );
 
   return await process.exitCode;
 }
