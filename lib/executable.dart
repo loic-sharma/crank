@@ -91,6 +91,7 @@ class RunCommand extends Command {
         if (device != null) ... [
           '--device-id', device,
         ],
+        ...args.rest,
       ],
     );
   }
