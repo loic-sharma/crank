@@ -86,6 +86,8 @@ class RunCommand extends Command {
     await _runProcess(
       'flutter', [
         'run',
+        if (buildMode == BuildMode.profile) '--profile',
+        if (buildMode == BuildMode.release) '--release',
         '--local-engine', buildTarget,
         '--local-engine-host', buildTarget,
         if (device != null) ... [
