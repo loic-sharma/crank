@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:convert';
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as path;
@@ -7,6 +6,7 @@ import 'package:path/path.dart' as path;
 Future<void> main(List<String> args) async {
   final runner = CommandRunner('crank', 'Flutter engine tool');
   runner.addCommand(BuildCommand());
+  runner.addCommand(BuildAppCommand());
   runner.addCommand(CleanCommand());
   runner.addCommand(FetchCommand());
   runner.addCommand(RunCommand());
@@ -52,6 +52,56 @@ class BuildCommand extends Command {
     }
 
     await _runBuild(buildMode, clean, fetch);
+  }
+}
+
+class BuildAppCommand extends Command {
+  @override
+  final String name = 'build-app';
+
+  @override
+  final String description = 'Build a Flutter app using a locally built engine';
+
+  BuildAppCommand() {
+    addSubcommand(BuildWindowsAppCommand());
+  }
+}
+
+class BuildWindowsAppCommand extends Command {
+  @override
+  final String name = 'windows';
+
+  @override
+  final String description = 'Build a Flutter Windows app using a locally built engine';
+
+  BuildWindowsAppCommand() {
+    _addBuildModeFlags(argParser);
+  }
+
+  @override
+  Future<void> run() async {
+    final args = argResults!;
+    final (buildMode, buildModeError) = _parseBuildMode(args);
+    if (buildModeError != null) {
+      usageException(buildModeError);
+    }
+
+    final buildTarget = 'host_${buildMode}_unopt';
+
+    await _runProcess(
+      'flutter', [
+        'build',
+        'windows',
+        switch (buildMode) {
+          BuildMode.debug => '--debug',
+          BuildMode.profile => '--profile',
+          BuildMode.release => '--release',
+        },
+        '--local-engine', buildTarget,
+        '--local-engine-host', buildTarget,
+        ...args.rest,
+      ],
+    );
   }
 }
 
