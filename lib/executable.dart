@@ -208,10 +208,19 @@ class TestCommand extends Command {
       await _runBuild(buildMode, clean, fetch);
     }
 
-    final testPath = path.join('..', 'out', 'host_${buildMode}_unopt', 'flutter_windows_unittests.exe');
-    final testExe = path.normalize(File(testPath).absolute.path);
+    String executable;
+    if (Platform.isWindows) {
+      executable = 'flutter_windows_unittests.exe';
+    } else if (Platform.isLinux) {
+      executable = 'flutter_linux_unittests';
+    } else {
+      throw 'crank test does not support ${Platform.operatingSystem}';
+    }
 
-    await _runProcess(testExe, ['--repeat=1', '--gtest_filter=$filter']);
+    final relativeExecutable = path.join('..', 'out', 'host_${buildMode}_unopt', executable);
+    final absoluteExecutable = path.normalize(File(relativeExecutable).absolute.path);
+
+    await _runProcess(absoluteExecutable, ['--repeat=1', '--gtest_filter=$filter']);
   }
 }
 
