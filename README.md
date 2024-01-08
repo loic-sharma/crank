@@ -15,10 +15,10 @@ Build the engine:
 crank build --clean --fetch
 ```
 
-Run tests whose names contain `foo`:
+Run tests:
 
 ```sh
-crank test -f *foo*
+crank test
 ```
 
 Run a Flutter app using the locally built engine:
