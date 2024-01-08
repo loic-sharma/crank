@@ -9,7 +9,7 @@ Flutter engine development tool.
 
 ### Examples
 
-Build the engine:
+Build the Flutter engine:
 
 ```sh
 crank build --clean --fetch
