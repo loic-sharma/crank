@@ -3,6 +3,9 @@ import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as path;
 
+import 'builder.dart';
+import 'builders.dart';
+
 Future<void> main(List<String> args) async {
   final runner = CommandRunner('crank', 'Flutter engine tool');
   runner.addCommand(BuildCommand());
@@ -11,6 +14,7 @@ Future<void> main(List<String> args) async {
   runner.addCommand(FetchCommand());
   runner.addCommand(RunCommand());
   runner.addCommand(TestCommand());
+  runner.addCommand(GTestCommand());
 
   await runner.run(args);
 }
@@ -23,6 +27,13 @@ class BuildCommand extends Command {
   final String description = 'Build the Flutter engine';
 
   BuildCommand() {
+    argParser.addOption(
+      'builder',
+      abbr: 'b',
+      help: 'The builder to use',
+      allowed: builders.keys,
+      defaultsTo: builders.keys.first,
+    );
     argParser.addFlag(
       'clean',
       help: 'Clean the build directory',
@@ -33,7 +44,6 @@ class BuildCommand extends Command {
       help: 'Download dependencies',
       negatable: false,
     );
-    _addBuildModeFlags(argParser);
   }
 
   @override
@@ -45,13 +55,9 @@ class BuildCommand extends Command {
     final args = argResults!;
     final clean = args['clean'] as bool;
     final fetch = args['fetch'] as bool;
+    final builder = builders[args['builder'] as String]!;
 
-    final (buildMode, buildModeError) = _parseBuildMode(args);
-    if (buildModeError != null) {
-      usageException(buildModeError);
-    }
-
-    await _runBuild(buildMode, clean, fetch);
+    await _runBuild(builder, clean, fetch);
   }
 }
 
@@ -75,18 +81,26 @@ class BuildWindowsAppCommand extends Command {
   final String description = 'Build a Flutter Windows app using a locally built engine';
 
   BuildWindowsAppCommand() {
+    argParser.addOption(
+      'builder',
+      abbr: 'b',
+      help: 'The engine build configuration to use',
+      allowed: builders.keys,
+      defaultsTo: builders.keys.first,
+    );
+
     _addBuildModeFlags(argParser);
   }
 
   @override
   Future<void> run() async {
     final args = argResults!;
+    final builder = builders[args['builder'] as String]!;
+
     final (buildMode, buildModeError) = _parseBuildMode(args);
     if (buildModeError != null) {
       usageException(buildModeError);
     }
-
-    final buildTarget = 'host_${buildMode}_unopt';
 
     await _runProcess(
       'flutter', [
@@ -97,8 +111,9 @@ class BuildWindowsAppCommand extends Command {
           BuildMode.profile => '--profile',
           BuildMode.release => '--release',
         },
-        '--local-engine', buildTarget,
-        '--local-engine-host', buildTarget,
+        // TODO: Support non-host builds
+        '--local-engine', builder.ninja.config,
+        '--local-engine-host', builder.ninja.config,
         ...args.rest,
       ],
     );
@@ -114,6 +129,14 @@ class RunCommand extends Command {
 
   RunCommand() {
     argParser.addOption(
+      'builder',
+      abbr: 'b',
+      help: 'The builder to use',
+      allowed: builders.keys,
+      defaultsTo: builders.keys.first,
+    );
+
+    argParser.addOption(
       'device-id',
       abbr: 'd',
       help: 'Target device id or name (prefixes allowed).',
@@ -125,21 +148,22 @@ class RunCommand extends Command {
   @override
   Future<void> run() async {
     final args = argResults!;
+    final builder = builders[args['builder'] as String]!;
     final device = args['device-id'] as String?;
+
     final (buildMode, buildModeError) = _parseBuildMode(args);
     if (buildModeError != null) {
       usageException(buildModeError);
     }
-
-    final buildTarget = 'host_${buildMode}_unopt';
 
     await _runProcess(
       'flutter', [
         'run',
         if (buildMode == BuildMode.profile) '--profile',
         if (buildMode == BuildMode.release) '--release',
-        '--local-engine', buildTarget,
-        '--local-engine-host', buildTarget,
+        // TODO: Support non-host builds
+        '--local-engine', builder.ninja.config,
+        '--local-engine-host', builder.ninja.config,
         if (device != null) ... [
           '--device-id', device,
         ],
@@ -157,6 +181,86 @@ class TestCommand extends Command {
   final String description = "Run the Flutter engine's tests";
 
   TestCommand() {
+    argParser.addOption(
+      'builder',
+      abbr: 'b',
+      help: 'The builder to use',
+      allowed: builders.keys,
+      defaultsTo: builders.keys.first,
+    );
+
+    argParser.addSeparator('Build flags:');
+    argParser.addFlag(
+      'build',
+      help: 'Build the engine',
+      defaultsTo: true,
+    );
+    argParser.addFlag(
+      'clean',
+      help: 'Clean the build directory',
+      negatable: false,
+    );
+    argParser.addFlag(
+      'fetch',
+      help: 'Download dependencies',
+      negatable: false,
+    );
+  }
+
+  @override
+  Future<void> run() async {
+    if (!Directory('fml').existsSync()) {
+      throw 'crank build must be run in the engine repository';
+    }
+
+    final args = argResults!;
+    final builder = builders[args['builder'] as String]!;
+
+    var build = args['build'] as bool;
+    final clean = args['clean'] as bool;
+    final fetch = args['fetch'] as bool;
+    if (clean || fetch) {
+      build = true;
+    }
+
+    if (build) {
+      await _runBuild(builder, clean, fetch);
+    }
+
+    for (final test in builder.tests ?? const <Test>[]) {
+      assert(test.language == 'python', 'Unsupported test language "${test.language}"');
+
+      final executable = path.absolute(test.script);
+
+      _runProcess('python3', [executable, ...test.parameters]);
+    }
+  }
+}
+
+class GTestCommand extends Command {
+  @override
+  final String name = 'gtest';
+
+  @override
+  final String description = "Run a Flutter engine gtest executable";
+
+  GTestCommand() {
+    argParser.addOption(
+      'builder',
+      abbr: 'b',
+      help: 'The builder to use',
+      allowed: builders.keys,
+      defaultsTo: builders.keys.first,
+    );
+    argParser.addOption(
+      'executable',
+      abbr: 'e',
+      help: 'The gtest executable to run',
+      defaultsTo:
+       Platform.isWindows ? 'flutter_windows_unittests.exe' :
+       Platform.isLinux ? 'flutter_linux_unittests' :
+       null,
+    );
     argParser.addOption(
       'filter',
       abbr: 'f',
@@ -180,7 +284,6 @@ class TestCommand extends Command {
       help: 'Download dependencies',
       negatable: false,
     );
-    _addBuildModeFlags(argParser);
   }
 
   @override
@@ -190,6 +293,8 @@ class TestCommand extends Command {
     }
 
     final args = argResults!;
+    final builder = builders[args['builder'] as String]!;
+    final executable = args['executable'];
     var filter = args['filter'] as String;
 
     var build = args['build'] as bool;
@@ -199,25 +304,11 @@ class TestCommand extends Command {
       build = true;
     }
 
-    final (buildMode, buildModeError) = _parseBuildMode(args);
-    if (buildModeError != null) {
-      usageException(buildModeError);
-    }
-
     if (build) {
-      await _runBuild(buildMode, clean, fetch);
+      await _runBuild(builder, clean, fetch);
     }
 
-    String executable;
-    if (Platform.isWindows) {
-      executable = 'flutter_windows_unittests.exe';
-    } else if (Platform.isLinux) {
-      executable = 'flutter_linux_unittests';
-    } else {
-      throw 'crank test does not support ${Platform.operatingSystem}';
-    }
-
-    final relativeExecutable = path.join('..', 'out', 'host_${buildMode}_unopt', executable);
+    final relativeExecutable = path.join('..', 'out', builder.ninja.config, executable);
     final absoluteExecutable = path.normalize(File(relativeExecutable).absolute.path);
 
     await _runProcess(absoluteExecutable, ['--repeat=1', '--gtest_filter=$filter']);
@@ -240,11 +331,6 @@ class FetchCommand extends Command {
     if (await _runProcess('gclient', ['sync', '-D']) != 0) {
       throw 'Fetching dependencies failed...';
     }
-
-    final gn = Directory(path.join('tools', 'gn')).absolute.path;
-    if (await _runProcess(gn, ['--unoptimized', '--no-lto', '--no-goma']) != 0) {
-      throw 'Regenerating build files failed...';
-    }
   }
 }
 
@@ -256,7 +342,13 @@ class CleanCommand extends Command {
   final String description = "Clean the Flutter engine's build directory";
 
   CleanCommand() {
-    _addBuildModeFlags(argParser);
+    argParser.addOption(
+      'builder',
+      abbr: 'b',
+      help: 'The builder to use',
+      allowed: builders.keys,
+      defaultsTo: builders.keys.first,
+    );
   }
 
   @override
@@ -266,12 +358,9 @@ class CleanCommand extends Command {
     }
 
     final args = argResults!;
-    final (buildMode, buildModeError) = _parseBuildMode(args);
-    if (buildModeError != null) {
-      usageException(buildModeError);
-    }
+    final builder = builders[args['builder'] as String]!;
 
-    await _runProcess('autoninja', ['-C', '../out/host_${buildMode}_unopt', '-t', 'clean']);
+    await _runProcess('autoninja', ['-C', '../out/${builder.ninja.config}', '-t', 'clean']);
   }
 }
 
@@ -330,11 +419,11 @@ void _addBuildModeFlags(ArgParser args) {
 }
 
 Future<void> _runBuild(
-  BuildMode buildMode,
+  Builder builder,
   bool clean,
   bool fetch
 ) async {
-  final buildTarget = 'host_${buildMode}_unopt';
+  final buildTarget = builder.ninja.config;
 
   if (clean) {
     print('Cleaning build...');
@@ -345,16 +434,18 @@ Future<void> _runBuild(
   if (fetch) {
     print('Fetching dependencies...');
   
+    // TODO: gclient variables?
     if (await _runProcess('gclient', ['sync', '-D']) != 0) {
       throw 'Fetching dependencies failed...';
     }
 
     final gn = Directory(path.join('tools', 'gn')).absolute.path;
-    if (await _runProcess(gn, ['--unoptimized', '--no-lto', '--no-goma']) != 0) {
+    if (await _runProcess(gn, builder.gn) != 0) {
       throw 'Regenerating build files failed...';
     }
   }
 
+  // TODO: targets
   await _runProcess('autoninja', ['-C', '../out/$buildTarget']);
 }
 

@@ -1,9 +1,6 @@
 ## Crank
 
-Tool to simplify Flutter engine development.
-
-> [!WARNING]
-> Only supports Windows host and target.
+Flutter engine development tool.
 
 ### Installation
 
@@ -12,16 +9,10 @@ Tool to simplify Flutter engine development.
 
 ### Examples
 
-Update the engine's dependencies:
-
-```sh
-crank fetch
-```
-
 Build the engine:
 
 ```sh
-crank build
+crank build --clean --fetch
 ```
 
 Run tests whose names contain `foo`:
