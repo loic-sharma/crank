@@ -7,7 +7,23 @@ import 'builder.dart';
 import 'builders.dart';
 
 Future<void> main(List<String> args) async {
-  final runner = CommandRunner('crank', 'Flutter engine tool');
+  final description = '''
+A tool to develop the Flutter engine
+
+Common commands:
+
+  crank build --clean --fetch
+    Download dependencies and run a clean Flutter engine build.
+
+  crank test
+    Run the engine's tests.
+
+  crank run
+    Run a Flutter app using a locally built engine.
+''';
+
+  final runner = CommandRunner('crank', description);
+
   runner.addCommand(BuildCommand());
   runner.addCommand(BuildAppCommand());
   runner.addCommand(CleanCommand());
@@ -26,11 +42,14 @@ class BuildCommand extends Command {
   @override
   final String description = 'Build the Flutter engine';
 
+  @override
+  final String category = CrankCommandCategory.engine;
+
   BuildCommand() {
     argParser.addOption(
       'builder',
       abbr: 'b',
-      help: 'The builder to use',
+      help: 'The engine builder configuration',
       allowed: builders.keys,
       defaultsTo: builders.keys.first,
     );
@@ -67,6 +86,9 @@ class BuildAppCommand extends Command {
 
   @override
   final String description = 'Build a Flutter app using a locally built engine';
+
+  @override
+  final String category = CrankCommandCategory.apps;
 
   BuildAppCommand() {
     addSubcommand(BuildWindowsAppCommand());
@@ -127,11 +149,14 @@ class RunCommand extends Command {
   @override
   final String description = 'Run a Flutter app using a locally built engine';
 
+  @override
+  final String category = CrankCommandCategory.apps;
+
   RunCommand() {
     argParser.addOption(
       'builder',
       abbr: 'b',
-      help: 'The builder to use',
+      help: 'The engine builder configuration',
       allowed: builders.keys,
       defaultsTo: builders.keys.first,
     );
@@ -180,11 +205,14 @@ class TestCommand extends Command {
   @override
   final String description = "Run the Flutter engine's tests";
 
+  @override
+  final String category = CrankCommandCategory.engine;
+
   TestCommand() {
     argParser.addOption(
       'builder',
       abbr: 'b',
-      help: 'The builder to use',
+      help: 'The engine builder configuration',
       allowed: builders.keys,
       defaultsTo: builders.keys.first,
     );
@@ -244,11 +272,14 @@ class GTestCommand extends Command {
   @override
   final String description = "Run a Flutter engine gtest executable";
 
+  @override
+  final String category = CrankCommandCategory.engine;
+
   GTestCommand() {
     argParser.addOption(
       'builder',
       abbr: 'b',
-      help: 'The builder to use',
+      help: 'The engine builder configuration',
       allowed: builders.keys,
       defaultsTo: builders.keys.first,
     );
@@ -323,6 +354,9 @@ class FetchCommand extends Command {
   final String description = "Download the Flutter engine's dependencies";
 
   @override
+  final String category = CrankCommandCategory.engine;
+
+  @override
   Future<void> run() async {
     if (!Directory('fml').existsSync()) {
       throw 'crank build must be run in the engine repository';
@@ -341,11 +375,14 @@ class CleanCommand extends Command {
   @override
   final String description = "Clean the Flutter engine's build directory";
 
+  @override
+  final String category = CrankCommandCategory.engine;
+
   CleanCommand() {
     argParser.addOption(
       'builder',
       abbr: 'b',
-      help: 'The builder to use',
+      help: 'The engine builder configuration',
       allowed: builders.keys,
       defaultsTo: builders.keys.first,
     );
@@ -362,6 +399,11 @@ class CleanCommand extends Command {
 
     await _runProcess('autoninja', ['-C', '../out/${builder.ninja.config}', '-t', 'clean']);
   }
+}
+
+abstract final class CrankCommandCategory {
+  static const String engine = 'Engine';
+  static const String apps = 'Apps';
 }
 
 enum BuildMode {
