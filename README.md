@@ -27,6 +27,14 @@ Run a Flutter app using the locally built engine:
 crank run
 ```
 
+Use the `--builder` option (`-b`) to choose your build configuration:
+
+```sh
+crank build --builder host_release
+crank test --builder host_release
+crank run --builder host_release
+```
+
 ### Copyright
 
 Copyright held by Google LLC, however this is not an official Google product.
