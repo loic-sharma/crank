@@ -29,12 +29,30 @@ Common commands:
   runner.addCommand(BuildCommand());
   runner.addCommand(BuildAppCommand());
   runner.addCommand(CleanCommand());
+  runner.addCommand(DoctorCommand());
   runner.addCommand(FetchCommand());
   runner.addCommand(RunCommand());
   runner.addCommand(TestCommand());
   runner.addCommand(GTestCommand());
 
   await runner.run(args);
+}
+
+class DoctorCommand extends Command {
+  @override
+  final String name = 'doctor';
+
+  @override
+  final String description = 'Check the Flutter engine development environment';
+
+  @override
+  Future<void> run() async {
+    if (!Directory('fml').existsSync()) {
+      throw 'crank doctor must be run in the engine repository';
+    }
+
+    print('TODO!');
+  }
 }
 
 class BuildCommand extends Command {
