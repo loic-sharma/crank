@@ -35,6 +35,34 @@ crank test --builder host_release
 crank run --builder host_release
 ```
 
+### Custom builders
+
+Need a different builder configuration? Or want to alias a builder? Create
+a file `~/.config/crank/config.json` with the following content:
+
+```json
+{
+  "builds": [
+    {
+      "name": "my_custom_builder",
+      "gn": ["--no-lto"],
+      "ninja": {
+        "config": "host_release",
+      }
+    }
+  ]
+}
+```
+
+Use the name as the `--builder` option:
+
+```sh
+crank build --builder my_custom_builder
+```
+
+See [`//flutter/ci/builders/`](https://github.com/flutter/engine/tree/main/ci/builders)
+for JSON builder examples.
+
 ### Copyright
 
 Copyright held by Google LLC, however this is not an official Google product.

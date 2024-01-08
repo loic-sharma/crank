@@ -5,6 +5,7 @@ import 'package:path/path.dart' as path;
 
 import 'builder.dart';
 import 'builders.dart';
+import 'config.dart';
 
 Future<void> main(List<String> args) async {
   final description = '''
@@ -50,8 +51,8 @@ class BuildCommand extends Command {
       'builder',
       abbr: 'b',
       help: 'The engine builder configuration',
-      allowed: builders.keys,
-      defaultsTo: builders.keys.first,
+      allowed: _builders.keys,
+      defaultsTo: _builders.keys.first,
     );
     argParser.addFlag(
       'clean',
@@ -74,7 +75,7 @@ class BuildCommand extends Command {
     final args = argResults!;
     final clean = args['clean'] as bool;
     final fetch = args['fetch'] as bool;
-    final builder = builders[args['builder'] as String]!;
+    final builder = _builders[args['builder'] as String]!;
 
     await _runBuild(builder, clean, fetch);
   }
@@ -107,8 +108,8 @@ class BuildWindowsAppCommand extends Command {
       'builder',
       abbr: 'b',
       help: 'The engine build configuration to use',
-      allowed: builders.keys,
-      defaultsTo: builders.keys.first,
+      allowed: _builders.keys,
+      defaultsTo: _builders.keys.first,
     );
 
     _addBuildModeFlags(argParser);
@@ -117,7 +118,7 @@ class BuildWindowsAppCommand extends Command {
   @override
   Future<void> run() async {
     final args = argResults!;
-    final builder = builders[args['builder'] as String]!;
+    final builder = _builders[args['builder'] as String]!;
 
     final (buildMode, buildModeError) = _parseBuildMode(args);
     if (buildModeError != null) {
@@ -157,8 +158,8 @@ class RunCommand extends Command {
       'builder',
       abbr: 'b',
       help: 'The engine builder configuration',
-      allowed: builders.keys,
-      defaultsTo: builders.keys.first,
+      allowed: _builders.keys,
+      defaultsTo: _builders.keys.first,
     );
 
     argParser.addOption(
@@ -173,7 +174,7 @@ class RunCommand extends Command {
   @override
   Future<void> run() async {
     final args = argResults!;
-    final builder = builders[args['builder'] as String]!;
+    final builder = _builders[args['builder'] as String]!;
     final device = args['device-id'] as String?;
 
     final (buildMode, buildModeError) = _parseBuildMode(args);
@@ -213,8 +214,8 @@ class TestCommand extends Command {
       'builder',
       abbr: 'b',
       help: 'The engine builder configuration',
-      allowed: builders.keys,
-      defaultsTo: builders.keys.first,
+      allowed: _builders.keys,
+      defaultsTo: _builders.keys.first,
     );
 
     argParser.addSeparator('Build flags:');
@@ -242,7 +243,7 @@ class TestCommand extends Command {
     }
 
     final args = argResults!;
-    final builder = builders[args['builder'] as String]!;
+    final builder = _builders[args['builder'] as String]!;
 
     var build = args['build'] as bool;
     final clean = args['clean'] as bool;
@@ -260,7 +261,7 @@ class TestCommand extends Command {
 
       final executable = path.absolute(test.script);
 
-      _runProcess('python3', [executable, ...test.parameters]);
+      _runProcess('python3', [executable, ...?test.parameters]);
     }
   }
 }
@@ -280,8 +281,8 @@ class GTestCommand extends Command {
       'builder',
       abbr: 'b',
       help: 'The engine builder configuration',
-      allowed: builders.keys,
-      defaultsTo: builders.keys.first,
+      allowed: _builders.keys,
+      defaultsTo: _builders.keys.first,
     );
     argParser.addOption(
       'executable',
@@ -324,7 +325,7 @@ class GTestCommand extends Command {
     }
 
     final args = argResults!;
-    final builder = builders[args['builder'] as String]!;
+    final builder = _builders[args['builder'] as String]!;
     final executable = args['executable'];
     var filter = args['filter'] as String;
 
@@ -383,8 +384,8 @@ class CleanCommand extends Command {
       'builder',
       abbr: 'b',
       help: 'The engine builder configuration',
-      allowed: builders.keys,
-      defaultsTo: builders.keys.first,
+      allowed: _builders.keys,
+      defaultsTo: _builders.keys.first,
     );
   }
 
@@ -395,7 +396,7 @@ class CleanCommand extends Command {
     }
 
     final args = argResults!;
-    final builder = builders[args['builder'] as String]!;
+    final builder = _builders[args['builder'] as String]!;
 
     await _runProcess('autoninja', ['-C', '../out/${builder.ninja.config}', '-t', 'clean']);
   }
@@ -460,6 +461,17 @@ void _addBuildModeFlags(ArgParser args) {
   return (BuildMode.debug, null);
 }
 
+final _builders = _loadBuilders();
+
+Map<String, Builder> _loadBuilders() {
+  final config = loadConfig();
+
+  return <String, Builder>{
+    ...builders,
+    ...config.builders,
+  };
+}
+
 Future<void> _runBuild(
   Builder builder,
   bool clean,
@@ -480,9 +492,12 @@ Future<void> _runBuild(
     if (await _runProcess('gclient', ['sync', '-D']) != 0) {
       throw 'Fetching dependencies failed...';
     }
+  }
 
-    final gn = Directory(path.join('tools', 'gn')).absolute.path;
-    if (await _runProcess(gn, builder.gn) != 0) {
+  final buildTargetDir = Directory('../out/$buildTarget');
+  if (fetch || !buildTargetDir.existsSync()) {
+    final gn = Directory(path.join('tools', 'gn'));
+    if (await _runProcess(gn.absolute.path, builder.gn) != 0) {
       throw 'Regenerating build files failed...';
     }
   }

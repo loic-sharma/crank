@@ -8,9 +8,6 @@ final builders = {
     'host_debug_unopt': const Builder(
       name: 'host_debug_unopt',
       description: 'Build an unoptimized debug version that targets the host machine',
-      gclientVariables: {
-        'dowload_android_deps': false,
-      },
       gn: [
         '--runtime-mode',
         'debug',
@@ -43,9 +40,6 @@ final builders = {
     'host_debug': Builder(
       name: 'host_debug',
       description: 'Build a debug version that targets the host machine',
-      gclientVariables: {
-        'dowload_android_deps': false,
-      },
       gn: [
         '--runtime-mode',
         'debug',
@@ -75,9 +69,6 @@ final builders = {
     'host_profile': const Builder(
       name: 'host_profile',
       description: 'Build a version specialized for performance profiling that targets the host machine',
-      gclientVariables: {
-        'dowload_android_deps': false,
-      },
       gn: [
         '--runtime-mode',
         'profile',
@@ -107,9 +98,6 @@ final builders = {
     'host_release': const Builder(
       name: 'host_release',
       description: 'Build a release version that targets the host machine',
-      gclientVariables: {
-        'dowload_android_deps': false,
-      },
       gn: [
         '--runtime-mode',
         'release',
@@ -140,9 +128,6 @@ final builders = {
     'host_debug_unopt': const Builder(
       name: 'host_debug_unopt',
       description: 'Build an unoptimized debug version that targets the host machine',
-      gclientVariables: {
-        'dowload_android_deps': false,
-      },
       gn: [
         '--runtime-mode',
         'debug',
@@ -172,9 +157,6 @@ final builders = {
     'host_debug': Builder(
       name: 'host_debug',
       description: 'Build a debug version that targets the host machine',
-      gclientVariables: {
-        'dowload_android_deps': false,
-      },
       gn: [
         '--runtime-mode',
         'debug',
@@ -206,9 +188,6 @@ final builders = {
     'host_profile': const Builder(
       name: 'host_profile',
       description: 'Build a version specialized for performance profiling that targets the host machine',
-      gclientVariables: {
-        'dowload_android_deps': false,
-      },
       gn: [
         '--runtime-mode',
         'profile',
@@ -238,9 +217,6 @@ final builders = {
     'host_release': const Builder(
       name: 'host_release',
       description: 'Build a release version that targets the host machine',
-      gclientVariables: {
-        'dowload_android_deps': false,
-      },
       gn: [
         '--runtime-mode',
         'release',
@@ -274,9 +250,6 @@ final builders = {
     'host_debug_unopt': const Builder(
       name: 'host_debug_unopt',
       description: 'Build an unoptimized debug version that targets the host machine',
-      gclientVariables: {
-        'dowload_android_deps': false,
-      },
       gn: [
         '--runtime-mode',
         'debug',
@@ -306,9 +279,6 @@ final builders = {
     'host_debug': const Builder(
       name: 'host_debug',
       description: 'Build a debug version that targets the host machine',
-      gclientVariables: {
-        'dowload_android_deps': false,
-      },
       gn: [
         '--runtime-mode',
         'debug',
@@ -336,9 +306,6 @@ final builders = {
     'host_profile': const Builder(
       name: 'host_profile',
       description: 'Build a version specialized for performance profiling that targets the host machine',
-      gclientVariables: {
-        'dowload_android_deps': false,
-      },
       gn: [
         '--runtime-mode',
         'profile',
@@ -366,9 +333,6 @@ final builders = {
     'host_release': const Builder(
       name: 'host_release',
       description: 'Build a release version that targets the host machine',
-      gclientVariables: {
-        'dowload_android_deps': false,
-      },
       gn: [
         '--runtime-mode',
         'release',
