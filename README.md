@@ -37,8 +37,8 @@ crank run --builder host_release
 
 ### Custom builders
 
-Need a different builder configuration? Or want to alias a builder? Create
-a file `~/.config/crank/config.json` with the following content:
+Need a different builder configuration? Want an alias for a builder? Create
+the file `~/.config/crank/config.json` to configure custom builders:
 
 ```json
 {
