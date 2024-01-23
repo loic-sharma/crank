@@ -86,6 +86,9 @@ class BuildAppCommand extends Command {
   final String name = 'build-app';
 
   @override
+  List<String> get aliases => const ['app-build'];
+
+  @override
   final String description = 'Build a Flutter app using a locally built engine';
 
   @override
