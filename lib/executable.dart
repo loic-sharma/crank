@@ -6,6 +6,7 @@ import 'package:path/path.dart' as path;
 import 'builder.dart';
 import 'builders.dart';
 import 'config.dart';
+import 'gn.dart' as gn;
 
 Future<void> main(List<String> args) async {
   final description = '''
@@ -123,7 +124,16 @@ class BuildWindowsAppCommand extends Command {
     final args = argResults!;
     final builder = _builders[args['builder'] as String]!;
 
-    final (buildMode, buildModeError) = _parseBuildMode(args);
+    final gnArgs = gn.args.parse(builder.gn);
+    final gnBuildMode = switch (gnArgs['runtime-mode']) {
+      'debug' => BuildMode.debug,
+      'profile' => BuildMode.profile,
+      'release' => BuildMode.release,
+      'jit_release' => BuildMode.release,
+      _ => throw 'Unknown gn --runtime-mode "${gnArgs['runtime-mode']}"',
+    };
+
+    final (buildMode, buildModeError) = _parseBuildMode(args, defaultMode: gnBuildMode);
     if (buildModeError != null) {
       usageException(buildModeError);
     }
@@ -180,7 +190,16 @@ class RunCommand extends Command {
     final builder = _builders[args['builder'] as String]!;
     final device = args['device-id'] as String?;
 
-    final (buildMode, buildModeError) = _parseBuildMode(args);
+    final gnArgs = gn.args.parse(builder.gn);
+    final gnBuildMode = switch (gnArgs['runtime-mode']) {
+      'debug' => BuildMode.debug,
+      'profile' => BuildMode.profile,
+      'release' => BuildMode.release,
+      'jit_release' => BuildMode.release,
+      _ => throw 'Unknown gn --runtime-mode "${gnArgs['runtime-mode']}"',
+    };
+
+    final (buildMode, buildModeError) = _parseBuildMode(args, defaultMode: gnBuildMode);
     if (buildModeError != null) {
       usageException(buildModeError);
     }
@@ -444,7 +463,10 @@ void _addBuildModeFlags(ArgParser args) {
   );
 }
 
-(BuildMode mode, String? error) _parseBuildMode(ArgResults args) {
+(BuildMode mode, String? error) _parseBuildMode(
+  ArgResults args, {
+  BuildMode defaultMode = BuildMode.debug,
+}) {
   final debug = args['debug'] as bool;
   final release = args['release'] as bool;
   final profile = args['profile'] as bool;
@@ -461,7 +483,7 @@ void _addBuildModeFlags(ArgParser args) {
   if (debug) return (BuildMode.debug, null);
   if (release) return (BuildMode.release, null);
   if (profile) return (BuildMode.profile, null);
-  return (BuildMode.debug, null);
+  return (defaultMode, null);
 }
 
 final _builders = _loadBuilders();
