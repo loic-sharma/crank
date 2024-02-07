@@ -51,6 +51,14 @@ class DoctorCommand extends Command {
       throw 'crank doctor must be run in the engine repository';
     }
 
+    // Check dependencies: https://github.com/flutter/flutter/wiki/Setting-up-the-Engine-development-environment#getting-dependencies
+
+    // Check repository wasn't cloned locally: https://github.com/flutter/flutter/wiki/Setting-up-the-Engine-development-environment#getting-the-source
+
+    // Check Non-Googler Windows users have path variables set: https://github.com/flutter/flutter/wiki/Setting-up-the-Engine-development-environment#getting-the-source
+
+    // Check upstream remote
+
     print('TODO!');
   }
 }
