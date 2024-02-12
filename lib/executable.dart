@@ -554,7 +554,9 @@ Future<void> _runBuild(
   }
 
   // TODO: targets
-  await _runProcess('ninja', ['-C', '../out/$buildTarget']);
+  if (await _runProcess('ninja', ['-C', '../out/$buildTarget']) != 0) {
+    throw 'Build failed...';
+  }
 }
 
 Future<int> _runProcess(String executable, List<String> arguments) async {
