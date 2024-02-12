@@ -446,7 +446,7 @@ class CleanCommand extends Command {
     final args = argResults!;
     final builder = _builders[args['builder'] as String]!;
 
-    await _runProcess('autoninja', ['-C', '../out/${builder.ninja.config}', '-t', 'clean']);
+    await _runProcess('ninja', ['-C', '../out/${builder.ninja.config}', '-t', 'clean']);
   }
 }
 
@@ -533,7 +533,7 @@ Future<void> _runBuild(
   if (clean) {
     print('Cleaning build...');
   
-    await _runProcess('autoninja', ['-C', '../out/$buildTarget', '-t', 'clean']);
+    await _runProcess('ninja', ['-C', '../out/$buildTarget', '-t', 'clean']);
   }
 
   if (fetch) {
@@ -554,7 +554,7 @@ Future<void> _runBuild(
   }
 
   // TODO: targets
-  await _runProcess('autoninja', ['-C', '../out/$buildTarget']);
+  await _runProcess('ninja', ['-C', '../out/$buildTarget']);
 }
 
 Future<int> _runProcess(String executable, List<String> arguments) async {
