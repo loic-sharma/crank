@@ -34,6 +34,7 @@ Common commands:
   runner.addCommand(RunCommand());
   runner.addCommand(TestCommand());
   runner.addCommand(GTestCommand());
+  runner.addCommand(FormatCommand());
 
   await runner.run(args);
 }
@@ -447,6 +448,42 @@ class CleanCommand extends Command {
     final builder = _builders[args['builder'] as String]!;
 
     await _runProcess('ninja', ['-C', '../out/${builder.ninja.config}', '-t', 'clean']);
+  }
+}
+
+class FormatCommand extends Command {
+  @override
+  final String name = 'format';
+
+  @override
+  final String description = "Format the engine's source code";
+
+  @override
+  final String category = CrankCommandCategory.engine;
+
+  FormatCommand() {
+    argParser.addFlag(
+      'fix',
+      abbr: 'f',
+      help: 'Fix incorrect formatting',
+      defaultsTo: true,
+      negatable: true,
+    );
+  }
+
+  @override
+  Future<void> run() async {
+    if (!Directory('fml').existsSync()) {
+      throw 'crank format must be run in the engine repository';
+    }
+
+    final args = argResults!;
+    final fix = args['fix'] as bool;
+
+    final relativeExecutable = path.join('ci', 'bin', 'format.dart');
+    final absoluteExecutable = path.normalize(File(relativeExecutable).absolute.path);
+
+    await _runProcess('dart', [absoluteExecutable, fix ? '--fix' : '--no-fix']);
   }
 }
 
